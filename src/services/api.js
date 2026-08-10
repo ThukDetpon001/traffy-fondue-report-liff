@@ -34,34 +34,56 @@ export const FORM_META = {
 
 /**
  * 1. Fetch nearby responsible agencies based on latitude and longitude coordinates
+ * Calls POST https://api.traffy.in.th/org/responsible_org/ as specified in Traffy documentation
  * @param {number} lat - Latitude
  * @param {number} lng - Longitude
- * @returns {Promise<Array<{id: string|number, name: string, type?: string}>>}
+ * @returns {Promise<Array<Object>>}
  */
 export async function fetchAgenciesByCoords(lat, lng) {
     if (!lat || !lng) return [];
 
     try {
-        const url = `${KONG_BASE_URL}/fondue-reverse-geo/?action=find&latlng=${lat},${lng}`;
-        const response = await fetch(url);
+        const url = `${TRAFFY_BASE_URL}/org/responsible_org/`;
+        const response = await fetch(url, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                lat: Number(lat),
+                lon: Number(lng),
+                show_in_chatbot: true,
+                limit: 15,
+                payload: "linebot-response-org",
+                privacy: "all",
+                org_tags: "ALL"
+            }),
+        });
 
         if (!response.ok) {
-            throw new Error(`Reverse Geo API error: status ${response.status}`);
+            throw new Error(`Responsible Org API error: status ${response.status}`);
         }
 
         const data = await response.json();
-
-        // Parse array of agency objects from API response
         const rawResults = Array.isArray(data) ? data : data.results || data.data || [];
 
         return rawResults.map((item, index) => ({
-            id: String(item.fonduegroup_id || item.id || item.org_id || `agency-${index + 1}`),
-            name: item.fonduegroup_name || item.name || item.org_name || item.title || `หน่วยงาน ${index + 1}`,
-            type: item.fonduegroup_type_name || item.type || item.org_type || ""
+            id: String(item.id || item.fonduegroup_id || item.org_id || `agency-${index + 1}`),
+            name: item.name || item.fonduegroup_name || item.org_name || `หน่วยงาน ${index + 1}`,
+            photo: item.photo || item.fonduegroup_photo || "",
+            fonduegroup_status: item.fonduegroup_status || "",
+            admin_staff: item.admin_staff ?? item.staff ?? 0,
+            post_finish: item.post_finish ?? 0,
+            post: item.post ?? 0,
+            last_activity: item.last_activity || "",
+            distance: item.distance || null,
+            official_group: item.official_group ?? true,
+            show_in_chatbot: item.show_in_chatbot ?? true,
+            index: item.index || index + 1
         }));
 
     } catch (error) {
-        console.error("❌ Failed to fetch agencies from Traffy Reverse Geo API:", error);
+        console.error("❌ Failed to fetch agencies from Traffy Responsible Org API:", error);
         throw error;
     }
 }
