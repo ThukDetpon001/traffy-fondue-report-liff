@@ -20,8 +20,11 @@ const TRAFFY_BASE_URL = import.meta.env.DEV ? "/api-traffy" : "https://api.traff
 export const GATEWAY_API_URL = import.meta.env.VITE_GATEWAY_API_URL || "";
 
 // LIFF ID สำหรับระบุแหล่งที่มาใน Payload
-export const LIFF_ID = "2008393134-OOPHO3rq";
 
+// ทดสอบ
+// export const LIFF_ID = "2008393134-OOPHO3rq";
+// ของจริง
+export const LIFF_ID = "2000158432-8dRpRkTc";
 // Form metadata (bkk-careplan style)
 export const FORM_META = {
     form_id: "traffy_fondue_report_liff_v1",
