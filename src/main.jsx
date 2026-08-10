@@ -18,7 +18,8 @@ import "./index.css";
 // ใส่ LIFF ID ที่ได้จาก LINE Developers Console
 liff
   .init({
-    liffId: "2008393134-OOPHO3rq",
+    // liffId: "2008393134-OOPHO3rq", // ทดสอบ
+    liffId: "2000158432-8dRpRkTc", // ของจริง
     withLoginOnExternalBrowser: true, // บังคับ Login แม้ใช้เบราว์เซอร์ภายนอก
   })
   .then(() => {

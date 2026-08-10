@@ -273,7 +273,7 @@ export async function submitTraffyTicket(ticketData) {
         }
 
         const traffyPayload = {
-            id: lineProfile?.userId || "Uca378ac6504c504af909e43ad884fb90",
+            id: lineProfile?.userId || "",
             org_id: isNaN(Number(agency_id)) ? [agency_id] : [Number(agency_id)],
             description: description,
             latitude: Number(latitude),
