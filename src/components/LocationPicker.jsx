@@ -94,16 +94,16 @@ export function LocationPicker({ initialLat, initialLng, onLocationSelect }) {
                     type="button"
                     onClick={() => handleGetGPS(false)}
                     disabled={loadingGps}
-                    className="py-2.5 px-3 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 text-emerald-900 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-xs active:scale-98 disabled:opacity-60"
+                    className="py-2.5 px-3 bg-[#7A3E1D] hover:bg-[#5C2E10] text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-md shadow-[#7A3E1D]/20 active:scale-95 disabled:opacity-60"
                 >
                     {loadingGps ? (
                         <>
-                            <Loader2 className="w-4 h-4 animate-spin text-emerald-700" />
+                            <Loader2 className="w-4 h-4 animate-spin text-white" />
                             <span>กำลังดึงตำแหน่ง GPS...</span>
                         </>
                     ) : (
                         <>
-                            <Navigation className="w-4 h-4 text-emerald-700 shrink-0" />
+                            <Navigation className="w-4 h-4 text-white shrink-0" />
                             <span>ดึงตำแหน่ง GPS ปัจจุบัน</span>
                         </>
                     )}

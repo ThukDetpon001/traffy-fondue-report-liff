@@ -33,6 +33,8 @@ export default function ReportForm() {
     const [compressingImage, setCompressingImage] = useState(false);
     const [fontSize, setFontSize] = useState("sm"); // "sm" (A=16px) | "md" (A+=20px) | "lg" (A++=24px)
     const [draftRestored, setDraftRestored] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [successModal, setSuccessModal] = useState({ open: false, payload: null, idMsg: null });
 
     useEffect(() => {
         const root = document.documentElement;
@@ -52,11 +54,12 @@ export default function ReportForm() {
         register,
         handleSubmit,
         setValue,
+        getValues,
         watch,
         control,
         trigger,
         reset,
-        formState: { errors, isSubmitting },
+        formState: { errors },
     } = useForm({
         resolver: zodResolver(reportFormSchema),
     });
@@ -206,7 +209,13 @@ export default function ReportForm() {
     // ============================================================
     // SUBMIT TICKET HANDLER (MANUAL IN STEP 4 ONLY)
     // ============================================================
-    const onSubmit = async (data) => {
+    const handleManualSubmit = async () => {
+        // Validate all fields before submitting
+        const isValid = await trigger(["latitude", "longitude", "agency_id", "description"]);
+        if (!isValid) return;
+
+        const data = getValues();
+
         if (!liff.isLoggedIn()) {
             alert("❌ ไม่สามารถส่งแจ้งเรื่องได้\nกรุณาล็อกอินด้วยบัญชี LINE ก่อนใช้งาน");
             liff.login();
@@ -222,41 +231,31 @@ export default function ReportForm() {
             return;
         }
 
+        setIsSubmitting(true);
         try {
-            const firstImageFile = attachedImages[0]?.file || (data.images?.[0] instanceof File ? data.images[0] : null);
-
             const result = await submitTraffyTicket({
                 latitude: data.latitude,
                 longitude: data.longitude,
                 agency_id: data.agency_id,
                 agency_name: selectedAgencyObj?.name || "",
                 description: data.description,
-                imageFile: firstImageFile,
+                attachedImages: attachedImages,
                 lineProfile: lineProfile,
             });
 
             if (result.success) {
                 // Clear LocalStorage draft on successful submission
-                try {
-                    localStorage.removeItem(DRAFT_KEY);
-                } catch (e) {}
-
-                alert(`✅ ${result.message || "แจ้งเรื่องเข้าระบบ Traffy Fondue สำเร็จ!"}`);
-                
-                // Try closing LIFF window if open in LINE
-                if (liff.isInClient && liff.isInClient()) {
-                    liff.closeWindow();
-                } else {
-                    reset();
-                    setAttachedImages([]);
-                    setCurrentStep(1);
-                }
+                try { localStorage.removeItem(DRAFT_KEY); } catch (e) {}
+                // Show success modal with JSON payload
+                setSuccessModal({ open: true, payload: result.payload, idMsg: result.id_msg });
             } else {
                 alert(`❌ ไม่สามารถส่งแจ้งเรื่องได้: ${result.message || "เกิดข้อผิดพลาดจากเซิร์ฟเวอร์"}`);
             }
         } catch (error) {
             console.error("❌ Submit ticket error:", error);
             alert(`❌ เกิดข้อผิดพลาดในการส่งข้อมูล: ${error?.message || "ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้"}`);
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -401,7 +400,7 @@ export default function ReportForm() {
                 </div>
 
                 {/* Form Content Steps Container */}
-                <form id="traffy-report-form" onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
+                <form id="traffy-report-form" onSubmit={(e) => e.preventDefault()} className="space-y-4" noValidate>
                     {/* STEP 1: Location Picker */}
                     {currentStep === 1 && (
                         <div className="bg-slate-50 border border-slate-200 rounded-2xl p-3.5 sm:p-4 space-y-3 shadow-xs">
@@ -578,13 +577,13 @@ export default function ReportForm() {
 
                     {/* STEP 4: Manual Review & Summary (Explicit Submission) */}
                     {currentStep === 4 && (
-                        <section aria-label="สรุปข้อมูลก่อนส่งแจ้งเรื่อง" className="bg-slate-50 border border-slate-200 rounded-2xl p-3.5 sm:p-4 space-y-4 text-left shadow-xs">
+                        <section aria-label="สรุปข้อมูลก่อนส่งแจ้งเรื่อง" className="bg-slate-50 border border-slate-200 rounded-2xl p-3.5 sm:p-4 space-y-3 text-left shadow-xs">
                             <div role="note" className="bg-amber-50 border border-amber-300 p-3 rounded-xl flex items-start gap-2.5 text-amber-950 text-xs sm:text-sm text-left leading-relaxed">
                                 <Sparkles className="w-4 h-4 text-[#7A3E1D] shrink-0 mt-0.5" aria-hidden="true" />
                                 <span>ขั้นตอนสุดท้าย: กรุณาตรวจสอบความถูกต้อง แล้วกดปุ่ม "ส่งแจ้งเรื่อง" ด้านล่าง</span>
                             </div>
 
-                            <dl className="space-y-3">
+                            <dl className="space-y-2.5">
                                 {/* Item 1: พิกัดเกิดเหตุ */}
                                 <div className="p-3 bg-white border border-slate-200 rounded-xl text-left space-y-1">
                                     <dt className="text-xs font-bold text-slate-500 block">1. พิกัดเกิดเหตุ</dt>
@@ -627,6 +626,8 @@ export default function ReportForm() {
                                     </div>
                                 )}
                             </dl>
+
+
                         </section>
                     )}
                 </form>
@@ -658,10 +659,10 @@ export default function ReportForm() {
                     </button>
                 ) : (
                     <button
-                        type="submit"
-                        form="traffy-report-form"
+                        type="button"
+                        onClick={handleManualSubmit}
                         disabled={isSubmitting}
-                        className="flex-1 min-h-[48px] py-3.5 bg-[#0d5c3a] hover:bg-[#0a472d] text-white font-bold rounded-xl active:scale-95 transition flex items-center justify-center gap-2 text-sm shadow-md shadow-[#0d5c3a]/30 disabled:opacity-60"
+                        className="flex-1 min-h-[48px] py-3.5 bg-[#7A3E1D] hover:bg-[#5C2E10] text-white font-bold rounded-xl active:scale-95 transition flex items-center justify-center gap-2 text-sm shadow-md shadow-[#7A3E1D]/20 disabled:opacity-60"
                     >
                         {isSubmitting ? (
                             <>
@@ -671,12 +672,82 @@ export default function ReportForm() {
                         ) : (
                             <>
                                 <Send className="w-4 h-4" />
-                                <span>ยืนยันและส่งเรื่องแจ้งปัญหา 🚀</span>
+                                <span>ส่งเรื่องแจ้งปัญหา</span>
                             </>
                         )}
                     </button>
                 )}
             </div>
+            {/* ✅ SUCCESS MODAL (bkk-careplan style) */}
+            {successModal.open && (
+                <div
+                    className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="successModalTitle"
+                >
+                    <div className="w-full max-w-md bg-white sm:rounded-2xl rounded-t-3xl shadow-2xl overflow-hidden animate-in slide-in-from-bottom-4 duration-300">
+                        {/* Modal Header */}
+                        <div className="bg-gradient-to-r from-[#7A3E1D] to-[#5C2E10] px-5 py-4 text-white text-center">
+                            <div className="text-3xl mb-1">✅</div>
+                            <h3 id="successModalTitle" className="text-base font-bold">ยื่นเรื่องเรียบร้อยแล้ว!</h3>
+                            {successModal.idMsg && (
+                                <p className="text-amber-100 text-xs mt-0.5">รหัสเรื่อง #{successModal.idMsg}</p>
+                            )}
+                        </div>
+
+                        {/* Modal Body */}
+                        <div className="p-4 space-y-3 max-h-[60vh] overflow-y-auto">
+                            <p className="text-xs text-slate-600 leading-relaxed text-center">
+                                ระบบบันทึกข้อมูลคำร้องเข้าสู่ระบบเรียบร้อยแล้ว เมื่อระบบประมวลผลเสร็จสิ้น ท่านจะได้รับใบรวบรวมสรุปข้อมูลผ่านทางแชต LINE นี้ และเจ้าหน้าที่จะแจ้งความคืบหน้าการดำเนินงานให้ทราบเป็นระยะ
+                            </p>
+
+                            {/* JSON Output */}
+                            {successModal.payload && (
+                                <div className="rounded-xl overflow-hidden border border-slate-200">
+                                    <div className="flex items-center justify-between px-3 py-2 bg-slate-100">
+                                        <span className="text-[11px] font-bold text-slate-600">JSON Payload Output:</span>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                navigator.clipboard?.writeText(
+                                                    JSON.stringify(successModal.payload, null, 2)
+                                                ).then(() => alert("✅ คัดลอก JSON เรียบร้อย!"));
+                                            }}
+                                            className="text-[10px] font-bold bg-[#7A3E1D] text-white px-2 py-1 rounded-lg hover:bg-[#5C2E10] active:scale-95 transition"
+                                        >
+                                            ก๊อปปี้ JSON
+                                        </button>
+                                    </div>
+                                    <pre className="bg-slate-900 text-emerald-400 text-[10px] font-mono p-3 overflow-x-auto max-h-52 overflow-y-auto leading-relaxed">
+                                        {JSON.stringify(successModal.payload, null, 2)}
+                                    </pre>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Modal Footer */}
+                        <div className="px-4 pb-5 pt-1">
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setSuccessModal({ open: false, payload: null, idMsg: null });
+                                    if (liff.isInClient && liff.isInClient()) {
+                                        liff.closeWindow();
+                                    } else {
+                                        reset();
+                                        setAttachedImages([]);
+                                        setCurrentStep(1);
+                                    }
+                                }}
+                                className="w-full min-h-[48px] bg-[#7A3E1D] hover:bg-[#5C2E10] text-white font-bold rounded-xl active:scale-95 transition text-sm flex items-center justify-center shadow-md shadow-[#7A3E1D]/20"
+                            >
+                                เสร็จสิ้น / ปิดหน้าต่าง
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
