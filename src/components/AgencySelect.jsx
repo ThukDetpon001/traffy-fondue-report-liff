@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
-import { Check, Building2, Search, AlertTriangle, RefreshCw, History, UserCheck, FileText, Clock } from "lucide-react";
-import { fetchAgenciesByCoords } from "@/services/api";
+import { Check, Building2, Search, AlertTriangle, RefreshCw, History, Clock } from "lucide-react";
+import { fetchAgenciesByCoords, fetchLatestReportedAgency } from "@/services/api";
+import liff from "@line/liff";
 
 export function AgencySelect({ lat, lng, value, onChange }) {
     const [agencies, setAgencies] = useState([]);
+    const [latestAgency, setLatestAgency] = useState(null);
     const [searchQuery, setSearchQuery] = useState("");
     const [loading, setLoading] = useState(false);
     const [errorMsg, setErrorMsg] = useState("");
@@ -40,6 +42,30 @@ export function AgencySelect({ lat, lng, value, onChange }) {
     useEffect(() => {
         loadAgencies();
     }, [lat, lng]);
+
+    // ดึงข้อมูลหน่วยงานแจ้งล่าสุดของผู้ใช้อัตโนมัติจาก LINE User ID (ไม่ Hardcode)
+    useEffect(() => {
+        let isMounted = true;
+        async function loadLatestUserAgency() {
+            try {
+                if (liff && liff.isLoggedIn()) {
+                    const profile = await liff.getProfile();
+                    if (profile && profile.userId) {
+                        const data = await fetchLatestReportedAgency(profile.userId);
+                        if (isMounted && data) {
+                            setLatestAgency(data);
+                        }
+                    }
+                }
+            } catch (err) {
+                console.warn("⚠️ Could not fetch latest reported agency for LINE user:", err);
+            }
+        }
+        loadLatestUserAgency();
+        return () => {
+            isMounted = false;
+        };
+    }, []);
 
     // กรองรายชื่อหน่วยงานตามคำค้นหา
     const filteredAgencies = agencies.filter((agency) =>
@@ -220,32 +246,92 @@ export function AgencySelect({ lat, lng, value, onChange }) {
                             })}
                         </div>
 
-                        {/* โซนที่ 3: หน่วยงานที่พึ่งแจ้งล่าสุด (Placeholder UI Section) */}
-                        <div className="pt-3 border-t-2 border-slate-200/80 mt-2">
-                            <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700 mb-2 px-1">
-                                <History className="w-4 h-4 text-[#7A3E1D]" />
-                                <span>หน่วยงานที่พึ่งแจ้งล่าสุด (การแจ้งครั้งก่อน)</span>
-                            </div>
+                        {/* โซนที่ 3: หน่วยงานที่พึ่งแจ้งล่าสุด (แสดงเฉพาะเมื่อมีข้อมูล หากเป็นผู้ใช้ใหม่จะไม่แสดง) */}
+                        {latestAgency && (
+                            <div className="pt-3 border-t-2 border-slate-200/80 mt-2">
+                                <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700 mb-2 px-1">
+                                    <History className="w-4 h-4 text-[#7A3E1D]" />
+                                    <span>หน่วยงานที่พึ่งแจ้งล่าสุด (จากประวัติการแจ้ง)</span>
+                                </div>
 
-                            <div className="w-full p-3 rounded-2xl bg-amber-50/50 border border-amber-900/15 flex items-center justify-between gap-3 text-left">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-xl bg-amber-100 text-[#7A3E1D] flex items-center justify-center shrink-0 border border-amber-200">
-                                        <Clock className="w-5 h-5" />
+                                <div
+                                    className={`w-full p-3.5 rounded-2xl transition border flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs ${
+                                        String(value) === String(latestAgency.id)
+                                            ? "bg-amber-50/90 border-2 border-[#7A3E1D] shadow-sm"
+                                            : "bg-white border-amber-200/80 hover:border-amber-900/30"
+                                    }`}
+                                >
+                                    <div className="flex items-start gap-3 min-w-0">
+                                        {latestAgency.photo ? (
+                                            <img
+                                                src={latestAgency.photo}
+                                                alt={latestAgency.name}
+                                                className="w-12 h-12 rounded-xl object-cover border border-slate-100 shrink-0 shadow-xs mt-0.5"
+                                                onError={(e) => {
+                                                    e.target.onerror = null;
+                                                    e.target.style.display = 'none';
+                                                    e.target.nextSibling.style.display = 'flex';
+                                                }}
+                                            />
+                                        ) : null}
+                                        <div
+                                            className="w-12 h-12 rounded-xl bg-amber-100/70 text-[#7A3E1D] flex items-center justify-center shrink-0 border border-amber-200/60 shadow-xs mt-0.5"
+                                            style={{ display: latestAgency.photo ? 'none' : 'flex' }}
+                                        >
+                                            <Clock className="w-6 h-6" />
+                                        </div>
+
+                                        <div className="flex flex-col min-w-0 text-left">
+                                            <span className="font-bold text-slate-900 text-sm leading-tight tracking-tight mb-1.5">
+                                                {latestAgency.name}
+                                            </span>
+
+                                            <div className="flex flex-wrap items-center gap-1.5 text-xs text-slate-600 font-sans">
+                                                {renderStatusBadge(latestAgency.fonduegroup_status)}
+
+                                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-slate-100 rounded-md text-[11px] font-medium text-slate-700 border border-slate-200/80">
+                                                    <span>👥</span>
+                                                    <span>{latestAgency.admin_staff}</span>
+                                                </span>
+
+                                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-slate-100 rounded-md text-[11px] font-medium text-slate-700 border border-slate-200/80">
+                                                    <span>📄</span>
+                                                    <span>{latestAgency.post_finish}/{latestAgency.post}</span>
+                                                </span>
+
+                                                {latestAgency.last_activity && (
+                                                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-slate-100 rounded-md text-[11px] font-medium text-slate-700 border border-slate-200/80">
+                                                        <span>🕒</span>
+                                                        <span>{latestAgency.last_activity}</span>
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div className="flex flex-col">
-                                        <span className="font-semibold text-xs text-slate-800">
-                                            หน่วยงานแจ้งล่าสุด (รอเชื่อมต่อข้อมูล API)
-                                        </span>
-                                        <span className="text-[11px] text-slate-500">
-                                            ระบบกำลังเตรียมพร้อมรับ API latest-reported-org
-                                        </span>
+
+                                    <div className="flex items-center justify-end shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100">
+                                        <button
+                                            type="button"
+                                            onClick={() => onChange(String(latestAgency.id), latestAgency)}
+                                            className={`w-full sm:w-auto px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition flex items-center justify-center gap-1.5 shadow-xs active:scale-95 ${
+                                                String(value) === String(latestAgency.id)
+                                                    ? "bg-[#7A3E1D] text-white border border-[#5C2E10] ring-2 ring-[#7A3E1D]/30"
+                                                    : "bg-[#7A3E1D] hover:bg-[#5C2E10] text-white"
+                                            }`}
+                                        >
+                                            {String(value) === String(latestAgency.id) ? (
+                                                <>
+                                                    <Check className="w-4 h-4 text-white stroke-[3]" />
+                                                    <span>เลือกแล้ว</span>
+                                                </>
+                                            ) : (
+                                                <span>แจ้งที่นี่</span>
+                                            )}
+                                        </button>
                                     </div>
                                 </div>
-                                <span className="px-2.5 py-1 bg-slate-200/80 text-slate-600 rounded-lg text-[11px] font-semibold shrink-0">
-                                    รอดึงข้อมูล
-                                </span>
                             </div>
-                        </div>
+                        )}
                     </>
                 )}
             </div>

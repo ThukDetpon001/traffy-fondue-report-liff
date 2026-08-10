@@ -344,3 +344,47 @@ export async function submitTraffyTicket(ticketData) {
         };
     }
 }
+
+/**
+ * 6. Fetch user's most recently reported agency by dynamic LINE User ID
+ * Calls GET https://kong.traffy.in.th/api-latest-reported-org/latest-reported-org/?line_user_id={lineUserId}
+ * @param {string} lineUserId - Dynamic LINE User ID (NEVER hardcoded)
+ * @returns {Promise<Object|null>} Returns agency object if found, or null if new user / no history
+ */
+export async function fetchLatestReportedAgency(lineUserId) {
+    if (!lineUserId) return null;
+
+    try {
+        const url = `${KONG_BASE_URL}/api-latest-reported-org/latest-reported-org/?line_user_id=${encodeURIComponent(lineUserId)}`;
+        const response = await fetch(url);
+
+        if (!response.ok) {
+            return null;
+        }
+
+        const data = await response.json();
+        const rawResults = Array.isArray(data) ? data : data.results || [];
+
+        if (!data.status || rawResults.length === 0) {
+            return null;
+        }
+
+        const item = rawResults[0];
+        if (!item || !item.name) return null;
+
+        return {
+            id: String(item.id || item.fonduegroup_id || item.org_id || ""),
+            name: item.name || item.fonduegroup_name || item.org_name || "",
+            photo: item.photo || item.fonduegroup_photo || "",
+            fonduegroup_status: item.fonduegroup_status || "",
+            admin_staff: item.admin_staff ?? item.staff ?? 0,
+            post_finish: item.post_finish ?? 0,
+            post: item.post ?? 0,
+            last_activity: item.last_activity || "",
+            latest_reported: true
+        };
+    } catch (error) {
+        console.warn("⚠️ Failed to fetch latest reported agency (user may be new):", error);
+        return null;
+    }
+}
