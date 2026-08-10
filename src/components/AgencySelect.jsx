@@ -1,13 +1,14 @@
 import { useState, useEffect } from "react";
 import { Check, Building2, Search } from "lucide-react";
+import { fetchAgenciesByCoords } from "@/services/api";
 
 // ============================================================================
 // CONFIG & MOCK DATA
 // ============================================================================
-// เปลี่ยนสวิตช์นี้เป็น false เมื่อพร้อมเชื่อมต่อกับ Backend API จริง
-const USE_MOCK_DATA = true;
+// เปลี่ยนสวิตช์นี้เป็น false เพื่อดึงข้อมูลหน่วยงานจริงจาก Traffy Reverse Geo API
+const USE_MOCK_DATA = false;
 
-// Mockup รายชื่อหน่วยงาน A ถึง Z
+// Mockup รายชื่อหน่วยงาน A ถึง Z (สำรองกรณีใช้ Mock หรือเรียก API ไม่สำเร็จ)
 const MOCK_AGENCIES = Array.from({ length: 26 }, (_, i) => {
     const letter = String.fromCharCode(65 + i); // 'A' .. 'Z'
     return {
@@ -33,19 +34,22 @@ export function AgencySelect({ lat, lng, value, onChange }) {
                 return;
             }
 
-            // 2. กรณีเชื่อมต่อ Backend API จริง
+            // 2. กรณีเชื่อมต่อ Backend API จริง (Traffy Reverse Geo API)
             if (!lat || !lng) {
-                setAgencies([]);
+                setAgencies(MOCK_AGENCIES);
                 setLoading(false);
                 return;
             }
 
             try {
-                const res = await fetch(`/api/agencies?lat=${lat}&lng=${lng}`);
-                const data = await res.json();
-                setAgencies(data);
+                const data = await fetchAgenciesByCoords(lat, lng);
+                if (data && data.length > 0) {
+                    setAgencies(data);
+                } else {
+                    setAgencies(MOCK_AGENCIES);
+                }
             } catch (err) {
-                console.error("Failed to fetch agencies", err);
+                console.warn("⚠️ API fetch failed, falling back to mock agencies:", err);
                 setAgencies(MOCK_AGENCIES);
             } finally {
                 setLoading(false);
@@ -54,6 +58,7 @@ export function AgencySelect({ lat, lng, value, onChange }) {
 
         fetchAgencies();
     }, [lat, lng]);
+
 
     // กรองรายชื่อหน่วยงานตามคำค้นหา
     const filteredAgencies = agencies.filter((agency) =>
@@ -71,25 +76,29 @@ export function AgencySelect({ lat, lng, value, onChange }) {
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="พิมพ์เพื่อค้นหาหน่วยงาน (เช่น หน่วยงาน A)..."
+                    placeholder="พิมพ์เพื่อค้นหาหน่วยงาน..."
                     className="w-full pl-10 pr-4 py-3 bg-white border-2 border-amber-900/20 focus:border-[#7A3E1D] focus:ring-2 focus:ring-[#7A3E1D]/20 rounded-xl text-sm font-medium text-slate-900 placeholder:text-slate-400 outline-none transition shadow-xs"
                 />
             </div>
 
             {/* กรอบสีแดง: รายชื่อหน่วยงานทั้งหมดแบบ Scroll ได้ (Full List View) */}
-            <div className="border-2 border-amber-900/10 rounded-2xl bg-slate-50/50 p-2 max-h-[320px] sm:max-h-[360px] overflow-y-auto space-y-1.5 shadow-inner">
+            <div className="border-2 border-amber-900/10 rounded-2xl bg-slate-50/50 p-2 min-h-[320px] max-h-[50vh] sm:max-h-[440px] overflow-y-auto space-y-1.5 shadow-inner">
+
+
+
                 {loading ? (
                     <div className="py-8 text-center text-xs text-slate-400 font-medium">กำลังโหลดรายชื่อหน่วยงาน...</div>
                 ) : filteredAgencies.length === 0 ? (
                     <div className="py-8 text-center text-xs text-slate-400 font-medium">ไม่พบหน่วยงานที่ค้นหา</div>
                 ) : (
                     filteredAgencies.map((agency) => {
-                        const isSelected = value === agency.id;
+                        const agencyIdStr = String(agency.id);
+                        const isSelected = String(value) === agencyIdStr;
                         return (
                             <button
-                                key={agency.id}
+                                key={agencyIdStr}
                                 type="button"
-                                onClick={() => onChange(agency.id, agency)}
+                                onClick={() => onChange(agencyIdStr, agency)}
                                 className={`w-full p-3.5 rounded-xl text-left flex items-center justify-between transition ${
                                     isSelected
                                         ? "bg-amber-100/80 border-2 border-[#7A3E1D] text-[#7A3E1D] font-bold shadow-xs"
@@ -111,6 +120,7 @@ export function AgencySelect({ lat, lng, value, onChange }) {
                         );
                     })
                 )}
+
             </div>
         </div>
     );

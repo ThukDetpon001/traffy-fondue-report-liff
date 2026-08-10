@@ -16,5 +16,24 @@ export default defineConfig({
   },
   server: {
     allowedHosts: true,
+    proxy: {
+      "/api-kong": {
+        target: "https://kong.traffy.in.th",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api-kong/, ""),
+      },
+      "/api-neo": {
+        target: "https://neo-fondue.traffy.in.th",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api-neo/, ""),
+      },
+      "/api-traffy": {
+        target: "https://api.traffy.in.th",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api-traffy/, ""),
+      },
+    },
+
   },
 });
+
