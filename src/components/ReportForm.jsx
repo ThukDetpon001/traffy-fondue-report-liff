@@ -16,6 +16,7 @@ import {
     ChevronLeft,
     ChevronRight,
     Camera,
+    Image,
     Send,
     AlertCircle,
     Sparkles,
@@ -500,33 +501,89 @@ export default function ReportForm() {
                                 )}
                             </div>
 
-                            {/* Image Upload field with Canvas Compression */}
+                            {/* Image Upload field: LINE/Facebook Camera Style with Bottom-Left Album Shortcut */}
                             <div className="text-left">
                                 <label htmlFor="images" className="block text-sm font-bold mb-1.5 text-slate-900 text-left">
                                     รูปภาพประกอบ <span aria-hidden="true" className="text-red-600">*</span>
                                 </label>
-                                <div className="border-2 border-dashed border-emerald-700/50 hover:border-[#7A3E1D] rounded-2xl p-5 text-center bg-emerald-50/40 hover:bg-emerald-50/70 transition relative cursor-pointer">
+
+                                {/* Main Camera Box Card (Inspired by LINE/Facebook Chat Camera Screen) */}
+                                <div className="relative rounded-2xl bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 border-2 border-slate-700/80 p-6 sm:p-8 text-center text-white overflow-hidden shadow-md group transition hover:border-[#7A3E1D]">
+                                    {/* Background ambient pattern */}
+                                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-amber-500/10 via-transparent to-transparent pointer-events-none" />
+
+                                    {/* Main Direct Camera Input (Tap center to open camera) */}
                                     <input
-                                        id="images"
                                         type="file"
                                         accept="image/*"
-                                        multiple
                                         capture="environment"
                                         onChange={handleImageUpload}
                                         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                        title="กดเพื่อถ่ายภาพด้วยกล้อง"
                                     />
-                                    <div className="flex flex-col items-center gap-2" aria-hidden="true">
+
+                                    {/* Center Content: Camera Viewfinder */}
+                                    <div className="flex flex-col items-center gap-3 relative z-0 py-2">
                                         {compressingImage ? (
-                                            <Loader2 className="w-7 h-7 text-[#7A3E1D] animate-spin" />
-                                        ) : (
-                                            <div className="w-11 h-11 rounded-full bg-[#7A3E1D]/10 flex items-center justify-center text-[#7A3E1D]">
-                                                <Camera className="w-5 h-5" />
+                                            <div className="flex flex-col items-center gap-2">
+                                                <Loader2 className="w-10 h-10 text-amber-400 animate-spin" />
+                                                <span className="text-xs sm:text-sm font-bold text-amber-200">กำลังบีบอัดภาพถ่าย...</span>
                                             </div>
+                                        ) : (
+                                            <>
+                                                <div className="w-14 h-14 rounded-2xl bg-amber-500/20 border-2 border-amber-400/40 flex items-center justify-center text-amber-300 shadow-inner group-hover:scale-105 transition-transform duration-200">
+                                                    <Camera className="w-7 h-7" />
+                                                </div>
+                                                <div className="flex flex-col gap-0.5">
+                                                    <span className="text-sm sm:text-base font-bold text-white tracking-wide">
+                                                        แตะหน้าจอเพื่อถ่ายภาพด้วยกล้อง
+                                                    </span>
+                                                    <span className="text-xs text-slate-300">
+                                                        (ย่อขนาดและบีบอัดไฟล์ภาพอัตโนมัติ)
+                                                    </span>
+                                                </div>
+                                            </>
                                         )}
-                                        <span className="text-xs sm:text-sm font-bold text-slate-800">
-                                            {compressingImage ? "กำลังบีบอัดภาพถ่าย..." : "กดที่นี่เพื่อถ่ายภาพหรือเลือกไฟล์รูปภาพ"}
-                                        </span>
-                                        <span className="text-xs text-slate-500">รองรับไฟล์รูปภาพ JPG, PNG (ย่อขนาดภาพอัตโนมัติ)</span>
+                                    </div>
+
+                                    {/* BOTTOM-LEFT CORNER SHORTCUT (LINE/Facebook Style Album Picker) */}
+                                    <div className="absolute bottom-3 left-3 z-20 pointer-events-auto">
+                                        <label className="relative flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-950/80 hover:bg-slate-900 border border-white/20 hover:border-amber-400 text-white text-xs font-bold cursor-pointer transition shadow-lg backdrop-blur-md active:scale-95 group/album">
+                                            {/* Hidden File Input for Gallery (No capture attribute) */}
+                                            <input
+                                                type="file"
+                                                accept="image/*"
+                                                multiple
+                                                onChange={handleImageUpload}
+                                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                                title="เลือกรูปภาพจากคลังภาพ/อัลบั้ม"
+                                            />
+
+                                            {/* Thumbnail / Icon in Bottom-Left */}
+                                            {attachedImages.length > 0 ? (
+                                                <div className="relative w-7 h-7 rounded-lg overflow-hidden border border-white/40 shrink-0 bg-slate-800">
+                                                    <img
+                                                        src={attachedImages[attachedImages.length - 1].url}
+                                                        alt="Thumbnail"
+                                                        className="w-full h-full object-cover"
+                                                    />
+                                                </div>
+                                            ) : (
+                                                <div className="w-7 h-7 rounded-lg bg-amber-500/30 border border-amber-400/50 flex items-center justify-center text-amber-300 shrink-0">
+                                                    <Image className="w-4 h-4" />
+                                                </div>
+                                            )}
+
+                                            <div className="flex flex-col text-left leading-none">
+                                                <span className="text-[11px] font-bold text-amber-200">อัลบั้ม</span>
+                                                <span className="text-[10px] text-slate-300 font-normal">เลือกจากคลังภาพ</span>
+                                            </div>
+                                        </label>
+                                    </div>
+
+                                    {/* BOTTOM-RIGHT CORNER INFO BADGE */}
+                                    <div className="absolute bottom-3 right-3 z-0 text-[10px] text-slate-400 bg-slate-950/50 px-2 py-1 rounded-lg border border-slate-700/50">
+                                        {attachedImages.length} รูป
                                     </div>
                                 </div>
 
