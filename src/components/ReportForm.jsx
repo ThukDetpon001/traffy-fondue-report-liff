@@ -192,7 +192,7 @@ export default function ReportForm() {
             setAttachedImages(updatedList);
             setValue("images", updatedList.map((item) => item.file), { shouldValidate: true });
         } catch (err) {
-            alert(err.message || "เกิดข้อผิดพลาดในการบีบอัดรูปภาพ");
+            alert("ไม่สามารถประมวลผลรูปภาพได้ กรุณาลองเลือกรูปภาพใหม่อีกครั้ง");
         } finally {
             setCompressingImage(false);
             e.target.value = ""; // Reset input value so same image can be re-selected if deleted
@@ -218,7 +218,7 @@ export default function ReportForm() {
         const data = getValues();
 
         if (!liff.isLoggedIn()) {
-            alert("❌ ไม่สามารถส่งแจ้งเรื่องได้\nกรุณาล็อกอินด้วยบัญชี LINE ก่อนใช้งาน");
+            alert("กรุณาเข้าสู่ระบบด้วยบัญชี LINE เพื่อส่งเรื่องแจ้งปัญหา");
             liff.login();
             return;
         }
@@ -228,7 +228,7 @@ export default function ReportForm() {
             lineProfile = await liff.getProfile();
         } catch (liffError) {
             console.error("ดึง LINE Profile ไม่สำเร็จ:", liffError);
-            alert("❌ ไม่สามารถดึงข้อมูลบัญชี LINE ได้\nกรุณาลองใหม่อีกครั้ง");
+            alert("ไม่สามารถเชื่อมต่อข้อมูลบัญชี LINE ได้ กรุณาลองใหม่อีกครั้ง");
             return;
         }
 
@@ -250,11 +250,11 @@ export default function ReportForm() {
                 // Show success modal with JSON payload
                 setSuccessModal({ open: true, payload: result.payload, idMsg: result.id_msg });
             } else {
-                alert(`❌ ไม่สามารถส่งแจ้งเรื่องได้: ${result.message || "เกิดข้อผิดพลาดจากเซิร์ฟเวอร์"}`);
+                alert("ไม่สามารถส่งเรื่องแจ้งได้ในขณะนี้ กรุณาตรวจสอบข้อมูลและลองใหม่อีกครั้ง");
             }
         } catch (error) {
             console.error("❌ Submit ticket error:", error);
-            alert(`❌ เกิดข้อผิดพลาดในการส่งข้อมูล: ${error?.message || "ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้"}`);
+            alert("เกิดข้อผิดพลาดในการส่งข้อมูล กรุณาตรวจสอบสัญญาณอินเทอร์เน็ตแล้วลองอีกครั้ง");
         } finally {
             setIsSubmitting(false);
         }
@@ -527,7 +527,7 @@ export default function ReportForm() {
                                         {compressingImage ? (
                                             <div className="flex flex-col items-center gap-2">
                                                 <Loader2 className="w-10 h-10 text-amber-400 animate-spin" />
-                                                <span className="text-xs sm:text-sm font-bold text-amber-200">กำลังบีบอัดภาพถ่าย...</span>
+                                                <span className="text-xs sm:text-sm font-bold text-amber-200">กำลังเตรียมรูปภาพ...</span>
                                             </div>
                                         ) : (
                                             <>
@@ -539,7 +539,7 @@ export default function ReportForm() {
                                                         แตะหน้าจอเพื่อถ่ายภาพด้วยกล้อง
                                                     </span>
                                                     <span className="text-xs text-slate-300">
-                                                        (ย่อขนาดและบีบอัดไฟล์ภาพอัตโนมัติ)
+                                                        (ปรับขนาดรูปภาพให้อัตโนมัติ)
                                                     </span>
                                                 </div>
                                             </>

@@ -28,12 +28,12 @@ export function AgencySelect({ lat, lng, value, onChange }) {
                 setErrorMsg("");
             } else {
                 setAgencies([]);
-                setErrorMsg("ไม่พบข้อมูลหน่วยงานรับผิดชอบในบริเวณพิกัดนี้จากระบบ API");
+                setErrorMsg("ไม่พบหน่วยงานรับผิดชอบในบริเวณพิกัดที่ระบุ");
             }
         } catch (err) {
             console.error("❌ API fetch failed:", err);
             setAgencies([]);
-            setErrorMsg("เกิดข้อผิดพลาดในการเชื่อมต่อดึงข้อมูลหน่วยงานจาก API");
+            setErrorMsg("ไม่สามารถโหลดข้อมูลหน่วยงานได้ กรุณาตรวจสอบสัญญาณอินเทอร์เน็ตแล้วลองใหม่อีกครั้ง");
         } finally {
             setLoading(false);
         }
@@ -129,7 +129,7 @@ export function AgencySelect({ lat, lng, value, onChange }) {
                 {loading ? (
                     <div className="my-auto py-12 text-center text-xs text-slate-500 font-medium flex flex-col items-center justify-center gap-2">
                         <div className="w-7 h-7 border-3 border-[#7A3E1D] border-t-transparent rounded-full animate-spin"></div>
-                        <span className="font-semibold text-slate-700">กำลังโหลดรายชื่อหน่วยงานรับผิดชอบจาก API...</span>
+                        <span className="font-semibold text-slate-700">กำลังค้นหาหน่วยงานรับผิดชอบในพื้นที่...</span>
                     </div>
                 ) : errorMsg ? (
                     <div className="my-auto py-10 px-4 text-center text-xs font-medium text-amber-950 flex flex-col items-center justify-center gap-2.5">

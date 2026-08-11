@@ -61,7 +61,7 @@ export function LocationPicker({ initialLat, initialLng, onLocationSelect }) {
 
     const handleGetGPS = (isAuto = false) => {
         if (!("geolocation" in navigator)) {
-            if (!isAuto) alert("เบราว์เซอร์นี้ไม่รองรับการดึงพิกัด GPS");
+            if (!isAuto) alert("อุปกรณ์หรือเบราว์เซอร์นี้ไม่รองรับการระบุตำแหน่ง");
             return;
         }
 
@@ -79,7 +79,7 @@ export function LocationPicker({ initialLat, initialLng, onLocationSelect }) {
                 console.warn("Geolocation fetch failed/denied:", err);
                 setLoadingGps(false);
                 if (!isAuto) {
-                    alert("ไม่สามารถดึงตำแหน่งพิกัดปัจจุบันได้ กรุณาเปิดสิทธิ์ระบุตำแหน่ง GPS บนมือถือ");
+                    alert("ไม่สามารถเข้าถึงตำแหน่งได้ กรุณาเปิดสิทธิ์ใช้งานตำแหน่ง (Location Services) บนอุปกรณ์ของคุณ");
                 }
             },
             { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
@@ -99,12 +99,12 @@ export function LocationPicker({ initialLat, initialLng, onLocationSelect }) {
                     {loadingGps ? (
                         <>
                             <Loader2 className="w-4 h-4 animate-spin text-white" />
-                            <span>กำลังดึงตำแหน่ง GPS...</span>
+                            <span>กำลังค้นหาตำแหน่งของคุณ...</span>
                         </>
                     ) : (
                         <>
                             <Navigation className="w-4 h-4 text-white shrink-0" />
-                            <span>ดึงตำแหน่ง GPS ปัจจุบัน</span>
+                            <span>ดึงตำแหน่งปัจจุบัน</span>
                         </>
                     )}
                 </button>
