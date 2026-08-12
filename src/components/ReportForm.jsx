@@ -512,115 +512,96 @@ export default function ReportForm() {
                                 )}
                             </div>
 
-                            {/* Image Upload field: Warm Amber Theme Camera Viewfinder UI (No Blue/Navy & No Overlap) */}
+                            {/* Image Upload field: Clean Card with Gallery & Camera Selection */}
                             <div className="text-left">
                                 <label htmlFor="images" className="block text-sm font-bold mb-1.5 text-slate-900 text-left">
                                     รูปภาพประกอบ <span aria-hidden="true" className="text-red-600">*</span>
                                 </label>
 
-                                {/* Camera Viewfinder Screen Container (Warm Amber Brown Theme matching app design) */}
-                                <div className="relative rounded-3xl bg-gradient-to-b from-[#2E1508] via-[#3B1C0B] to-[#2E1508] border-2 border-amber-900/50 p-4 sm:p-5 text-center text-white overflow-hidden shadow-xl min-h-[260px] flex flex-col justify-between select-none">
-                                    {/* Ambient Warm Glow Pattern */}
+                                {/* Main Clickable Upload Card (Opens OS sheet with Gallery Album + Camera options) */}
+                                <div className="relative rounded-3xl bg-gradient-to-b from-[#2E1508] via-[#3B1C0B] to-[#2E1508] border-2 border-amber-900/50 p-6 sm:p-7 text-center text-white overflow-hidden shadow-xl group transition hover:border-amber-700/80 cursor-pointer">
+                                    {/* Ambient Glow */}
                                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-amber-500/10 via-transparent to-transparent pointer-events-none" />
 
-                                    {/* Top Control Bar (Theme Status Indicator) */}
-                                    <div className="flex items-center justify-between text-amber-200 text-xs px-1 relative z-20 pointer-events-none">
+                                    {/* System File Input (No capture attribute so OS displays BOTH Camera & Photo Gallery Album) */}
+                                    <input
+                                        id="images"
+                                        type="file"
+                                        accept="image/*"
+                                        multiple
+                                        onChange={handleImageUpload}
+                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                        title="กดเพื่อถ่ายภาพหรือเลือกรูปจากอัลบั้ม"
+                                    />
+
+                                    {/* Top Status Tag */}
+                                    <div className="flex items-center justify-between text-amber-200 text-xs relative z-0 pointer-events-none mb-3">
                                         <div className="flex items-center gap-1.5 bg-amber-950/80 px-2.5 py-1 rounded-full border border-amber-800/60 font-semibold text-[11px] text-amber-300">
                                             <Camera className="w-3.5 h-3.5 text-amber-400" />
-                                            <span>โหมดถ่ายภาพ / เลือกรูปภาพ</span>
+                                            <span>อัปโหลดรูปภาพ</span>
                                         </div>
-                                        <div className="text-[11px] font-bold text-amber-300/80 bg-amber-950/60 px-2 py-0.5 rounded-lg border border-amber-900/50">
+                                        <div className="text-[11px] font-bold text-amber-300/80 bg-amber-950/60 px-2.5 py-0.5 rounded-lg border border-amber-900/50">
                                             {attachedImages.length} รูปที่แนบ
                                         </div>
                                     </div>
 
-                                    {/* Center Viewfinder Target / Loading Area */}
-                                    <div className="relative my-auto py-5 flex flex-col items-center justify-center z-0">
-                                        {/* Direct Camera Input Overlay (Tap center area to trigger camera shutter) */}
+                                    {/* Center Content Area */}
+                                    <div className="flex flex-col items-center justify-center gap-3 relative z-0 py-2">
+                                        {compressingImage ? (
+                                            <div className="flex flex-col items-center gap-2 py-3">
+                                                <Loader2 className="w-10 h-10 text-amber-400 animate-spin" />
+                                                <span className="text-xs font-bold text-amber-200">กำลังเตรียมรูปภาพ...</span>
+                                            </div>
+                                        ) : (
+                                            <>
+                                                <div className="flex items-center gap-2.5">
+                                                    <div className="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-400/40 flex items-center justify-center text-amber-300 shadow-inner group-hover:scale-105 transition-transform duration-200">
+                                                        <Camera className="w-6 h-6" />
+                                                    </div>
+                                                    <div className="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-400/40 flex items-center justify-center text-amber-300 shadow-inner group-hover:scale-105 transition-transform duration-200">
+                                                        <Image className="w-6 h-6" />
+                                                    </div>
+                                                </div>
+                                                <div className="flex flex-col gap-1">
+                                                    <span className="text-sm sm:text-base font-bold text-amber-100 tracking-wide">
+                                                        กดที่นี่เพื่อถ่ายภาพ หรือเลือกรูปภาพจากอัลบั้ม
+                                                    </span>
+                                                    <span className="text-xs text-amber-300/70 font-medium">
+                                                        รองรับเลือกรูปจากคลังภาพ (Gallery) หรือถ่ายจากกล้องสด (บีบอัดภาพอัตโนมัติ)
+                                                    </span>
+                                                </div>
+                                            </>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Dedicated Quick Choice Buttons (Camera Direct vs Gallery Album Direct) */}
+                                <div className="grid grid-cols-2 gap-2 mt-2.5">
+                                    {/* Button 1: Camera Direct */}
+                                    <label className="relative flex items-center justify-center gap-1.5 px-3 py-2.5 bg-amber-950/20 border border-amber-900/30 hover:border-[#7A3E1D] hover:bg-amber-50/50 rounded-xl cursor-pointer transition shadow-xs active:scale-95 text-slate-800">
                                         <input
                                             type="file"
                                             accept="image/*"
                                             capture="environment"
                                             onChange={handleImageUpload}
-                                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                                            title="แตะเพื่อถ่ายภาพด้วยกล้องสด"
+                                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                                         />
+                                        <Camera className="w-4 h-4 text-[#7A3E1D]" />
+                                        <span className="text-xs font-bold text-slate-800">ถ่ายภาพด้วยกล้อง</span>
+                                    </label>
 
-                                        {compressingImage ? (
-                                            <div className="flex flex-col items-center gap-2 py-2">
-                                                <Loader2 className="w-10 h-10 text-amber-400 animate-spin" />
-                                                <span className="text-xs font-bold text-amber-200">กำลังเตรียมรูปภาพ...</span>
-                                            </div>
-                                        ) : (
-                                            <div className="flex flex-col items-center gap-2">
-                                                {/* Viewfinder Focus Ring */}
-                                                <div className="w-16 h-16 rounded-2xl border-2 border-dashed border-amber-400/60 flex items-center justify-center bg-amber-500/10 text-amber-300 shadow-inner">
-                                                    <Camera className="w-8 h-8" />
-                                                </div>
-                                                <div className="flex flex-col gap-0.5 mt-1">
-                                                    <span className="text-xs sm:text-sm font-bold text-amber-100 tracking-wide">
-                                                        แตะหน้าจอเพื่อเปิดกล้องถ่ายภาพ
-                                                    </span>
-                                                    <span className="text-[11px] text-amber-300/70">
-                                                        (หรือกดปุ่มอัลบั้มที่มุมขวาล่างเพื่อเลือกรูปภาพ)
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    {/* Bottom Control Bar: Shutter Center & Gallery Album Right (Matching App Theme) */}
-                                    <div className="relative z-20 flex items-center justify-between px-2 pt-2.5 border-t border-amber-900/40">
-                                        {/* Left Spacer for perfect center alignment */}
-                                        <div className="w-12 h-12 opacity-0 pointer-events-none" />
-
-                                        {/* Center: BIG WHITE/AMBER CAMERA SHUTTER BUTTON (Direct Camera Capture) */}
-                                        <label className="relative w-14 h-14 rounded-full border-4 border-amber-200 bg-amber-500/20 hover:bg-amber-500/30 flex items-center justify-center cursor-pointer transition shadow-xl active:scale-95 group/shutter">
-                                            <input
-                                                type="file"
-                                                accept="image/*"
-                                                capture="environment"
-                                                onChange={handleImageUpload}
-                                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                                                title="ปุ่มกดถ่ายรูป"
-                                            />
-                                            {/* Inner White/Gold Solid Circle Shutter */}
-                                            <div className="w-10 h-10 rounded-full bg-amber-100 group-hover/shutter:scale-105 transition-transform shadow-inner" />
-                                        </label>
-
-                                        {/* Bottom-Right: ALBUM / GALLERY THUMBNAIL BUTTON (Warm Theme) */}
-                                        <label className="relative flex items-center gap-1.5 p-1 px-2 rounded-2xl border-2 border-amber-400/80 bg-amber-950/90 hover:bg-amber-900 text-amber-100 text-xs font-bold cursor-pointer transition shadow-xl active:scale-95 group/album">
-                                            {/* Hidden File Input for Device Gallery / Album (No capture attribute) */}
-                                            <input
-                                                type="file"
-                                                accept="image/*"
-                                                multiple
-                                                onChange={handleImageUpload}
-                                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"
-                                                title="กดเพื่อเลือกรูปภาพจากคลังภาพ/อัลบั้มในเครื่อง"
-                                            />
-
-                                            {/* Gallery Thumbnail Preview inside the Square Button */}
-                                            {attachedImages.length > 0 ? (
-                                                <div className="w-9 h-9 rounded-xl overflow-hidden border border-amber-300/60 relative shrink-0 bg-amber-900">
-                                                    <img
-                                                        src={attachedImages[attachedImages.length - 1].url}
-                                                        alt="Album Thumbnail"
-                                                        className="w-full h-full object-cover"
-                                                    />
-                                                </div>
-                                            ) : (
-                                                <div className="w-9 h-9 rounded-xl bg-amber-500/20 border border-amber-400/50 flex items-center justify-center text-amber-300 shrink-0">
-                                                    <Image className="w-5 h-5 text-amber-300" />
-                                                </div>
-                                            )}
-
-                                            <div className="flex flex-col text-left leading-none pr-1">
-                                                <span className="text-[11px] font-bold text-amber-200">อัลบั้ม</span>
-                                                <span className="text-[9px] text-amber-300/80 font-normal">เลือกคลังภาพ</span>
-                                            </div>
-                                        </label>
-                                    </div>
+                                    {/* Button 2: Photo Library / Gallery */}
+                                    <label className="relative flex items-center justify-center gap-1.5 px-3 py-2.5 bg-amber-950/20 border border-amber-900/30 hover:border-[#7A3E1D] hover:bg-amber-50/50 rounded-xl cursor-pointer transition shadow-xs active:scale-95 text-slate-800">
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            multiple
+                                            onChange={handleImageUpload}
+                                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                        />
+                                        <Image className="w-4 h-4 text-[#7A3E1D]" />
+                                        <span className="text-xs font-bold text-slate-800">เลือกจากอัลบั้ม</span>
+                                    </label>
                                 </div>
 
                                 {/* Thumbnail Cards Grid Preview (inspired by bkk-careplan) */}
