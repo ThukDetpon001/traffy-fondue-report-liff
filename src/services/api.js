@@ -15,9 +15,8 @@ const KONG_BASE_URL   = import.meta.env.DEV ? "/api-kong"   : "https://kong.traf
 const NEO_BASE_URL    = import.meta.env.DEV ? "/api-neo"    : "https://neo-fondue.traffy.in.th";
 const TRAFFY_BASE_URL = import.meta.env.DEV ? "/api-traffy" : "https://api.traffy.in.th";
 
-// Gateway API URL (ถ้ามี Cloud Run Gateway ของตัวเอง ใส่ URL ที่นี่)
-// หากไม่มี Gateway ระบบจะ Fallback ส่งตรงไปยัง Traffy API
-export const GATEWAY_API_URL = import.meta.env.VITE_GATEWAY_API_URL || "";
+// Gateway API URL (Cloud Run Gateway Service เดียวกันกับ bkk-careplan)
+export const GATEWAY_API_URL = import.meta.env.VITE_GATEWAY_API_URL || "https://liff-form-gateway-884122932397.asia-southeast1.run.app/";
 
 // LIFF ID สำหรับระบุแหล่งที่มาใน Payload
 

@@ -247,7 +247,18 @@ export default function ReportForm() {
             if (result.success) {
                 // Clear LocalStorage draft on successful submission
                 try { localStorage.removeItem(DRAFT_KEY); } catch (e) {}
-                // Show success modal with JSON payload
+
+                // Send text confirmation into LINE chat if available (bkk-careplan style)
+                if (liff && liff.isInClient && liff.isInClient() && typeof liff.sendMessages === 'function') {
+                    liff.sendMessages([
+                        {
+                            type: 'text',
+                            text: `📌 บันทึกเรื่องแจ้งปัญหา Traffy Fondue เรียบร้อยแล้ว\n\nหน่วยงาน: ${selectedAgencyObj?.name || 'หน่วยงานรับผิดชอบ'}\nรายละเอียด: ${(data.description || '').substring(0, 60)}...\nสถานะ: ส่งเรื่องเข้าสู่ระบบเรียบร้อยแล้ว 🚀`
+                        }
+                    ]).catch((err) => console.warn("liff.sendMessages warning:", err));
+                }
+
+                // Show success modal with clean summary card
                 setSuccessModal({ open: true, payload: result.payload, idMsg: result.id_msg });
             } else {
                 alert("ไม่สามารถส่งเรื่องแจ้งได้ในขณะนี้ กรุณาตรวจสอบข้อมูลและลองใหม่อีกครั้ง");
@@ -501,89 +512,114 @@ export default function ReportForm() {
                                 )}
                             </div>
 
-                            {/* Image Upload field: LINE/Facebook Camera Style with Bottom-Left Album Shortcut */}
+                            {/* Image Upload field: Warm Amber Theme Camera Viewfinder UI (No Blue/Navy & No Overlap) */}
                             <div className="text-left">
                                 <label htmlFor="images" className="block text-sm font-bold mb-1.5 text-slate-900 text-left">
                                     รูปภาพประกอบ <span aria-hidden="true" className="text-red-600">*</span>
                                 </label>
 
-                                {/* Main Camera Box Card (Inspired by LINE/Facebook Chat Camera Screen) */}
-                                <div className="relative rounded-2xl bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 border-2 border-slate-700/80 p-6 sm:p-8 text-center text-white overflow-hidden shadow-md group transition hover:border-[#7A3E1D]">
-                                    {/* Background ambient pattern */}
+                                {/* Camera Viewfinder Screen Container (Warm Amber Brown Theme matching app design) */}
+                                <div className="relative rounded-3xl bg-gradient-to-b from-[#2E1508] via-[#3B1C0B] to-[#2E1508] border-2 border-amber-900/50 p-4 sm:p-5 text-center text-white overflow-hidden shadow-xl min-h-[260px] flex flex-col justify-between select-none">
+                                    {/* Ambient Warm Glow Pattern */}
                                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-amber-500/10 via-transparent to-transparent pointer-events-none" />
 
-                                    {/* Main Direct Camera Input (Tap center to open camera) */}
-                                    <input
-                                        type="file"
-                                        accept="image/*"
-                                        capture="environment"
-                                        onChange={handleImageUpload}
-                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                                        title="กดเพื่อถ่ายภาพด้วยกล้อง"
-                                    />
+                                    {/* Top Control Bar (Theme Status Indicator) */}
+                                    <div className="flex items-center justify-between text-amber-200 text-xs px-1 relative z-20 pointer-events-none">
+                                        <div className="flex items-center gap-1.5 bg-amber-950/80 px-2.5 py-1 rounded-full border border-amber-800/60 font-semibold text-[11px] text-amber-300">
+                                            <Camera className="w-3.5 h-3.5 text-amber-400" />
+                                            <span>โหมดถ่ายภาพ / เลือกรูปภาพ</span>
+                                        </div>
+                                        <div className="text-[11px] font-bold text-amber-300/80 bg-amber-950/60 px-2 py-0.5 rounded-lg border border-amber-900/50">
+                                            {attachedImages.length} รูปที่แนบ
+                                        </div>
+                                    </div>
 
-                                    {/* Center Content: Camera Viewfinder */}
-                                    <div className="flex flex-col items-center gap-3 relative z-0 py-2">
+                                    {/* Center Viewfinder Target / Loading Area */}
+                                    <div className="relative my-auto py-5 flex flex-col items-center justify-center z-0">
+                                        {/* Direct Camera Input Overlay (Tap center area to trigger camera shutter) */}
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            capture="environment"
+                                            onChange={handleImageUpload}
+                                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                            title="แตะเพื่อถ่ายภาพด้วยกล้องสด"
+                                        />
+
                                         {compressingImage ? (
-                                            <div className="flex flex-col items-center gap-2">
+                                            <div className="flex flex-col items-center gap-2 py-2">
                                                 <Loader2 className="w-10 h-10 text-amber-400 animate-spin" />
-                                                <span className="text-xs sm:text-sm font-bold text-amber-200">กำลังเตรียมรูปภาพ...</span>
+                                                <span className="text-xs font-bold text-amber-200">กำลังเตรียมรูปภาพ...</span>
                                             </div>
                                         ) : (
-                                            <>
-                                                <div className="w-14 h-14 rounded-2xl bg-amber-500/20 border-2 border-amber-400/40 flex items-center justify-center text-amber-300 shadow-inner group-hover:scale-105 transition-transform duration-200">
-                                                    <Camera className="w-7 h-7" />
+                                            <div className="flex flex-col items-center gap-2">
+                                                {/* Viewfinder Focus Ring */}
+                                                <div className="w-16 h-16 rounded-2xl border-2 border-dashed border-amber-400/60 flex items-center justify-center bg-amber-500/10 text-amber-300 shadow-inner">
+                                                    <Camera className="w-8 h-8" />
                                                 </div>
-                                                <div className="flex flex-col gap-0.5">
-                                                    <span className="text-sm sm:text-base font-bold text-white tracking-wide">
-                                                        แตะหน้าจอเพื่อถ่ายภาพด้วยกล้อง
+                                                <div className="flex flex-col gap-0.5 mt-1">
+                                                    <span className="text-xs sm:text-sm font-bold text-amber-100 tracking-wide">
+                                                        แตะหน้าจอเพื่อเปิดกล้องถ่ายภาพ
                                                     </span>
-                                                    <span className="text-xs text-slate-300">
-                                                        (ปรับขนาดรูปภาพให้อัตโนมัติ)
+                                                    <span className="text-[11px] text-amber-300/70">
+                                                        (หรือกดปุ่มอัลบั้มที่มุมขวาล่างเพื่อเลือกรูปภาพ)
                                                     </span>
                                                 </div>
-                                            </>
+                                            </div>
                                         )}
                                     </div>
 
-                                    {/* BOTTOM-LEFT CORNER SHORTCUT (LINE/Facebook Style Album Picker) */}
-                                    <div className="absolute bottom-3 left-3 z-20 pointer-events-auto">
-                                        <label className="relative flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-950/80 hover:bg-slate-900 border border-white/20 hover:border-amber-400 text-white text-xs font-bold cursor-pointer transition shadow-lg backdrop-blur-md active:scale-95 group/album">
-                                            {/* Hidden File Input for Gallery (No capture attribute) */}
+                                    {/* Bottom Control Bar: Shutter Center & Gallery Album Right (Matching App Theme) */}
+                                    <div className="relative z-20 flex items-center justify-between px-2 pt-2.5 border-t border-amber-900/40">
+                                        {/* Left Spacer for perfect center alignment */}
+                                        <div className="w-12 h-12 opacity-0 pointer-events-none" />
+
+                                        {/* Center: BIG WHITE/AMBER CAMERA SHUTTER BUTTON (Direct Camera Capture) */}
+                                        <label className="relative w-14 h-14 rounded-full border-4 border-amber-200 bg-amber-500/20 hover:bg-amber-500/30 flex items-center justify-center cursor-pointer transition shadow-xl active:scale-95 group/shutter">
+                                            <input
+                                                type="file"
+                                                accept="image/*"
+                                                capture="environment"
+                                                onChange={handleImageUpload}
+                                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                                title="ปุ่มกดถ่ายรูป"
+                                            />
+                                            {/* Inner White/Gold Solid Circle Shutter */}
+                                            <div className="w-10 h-10 rounded-full bg-amber-100 group-hover/shutter:scale-105 transition-transform shadow-inner" />
+                                        </label>
+
+                                        {/* Bottom-Right: ALBUM / GALLERY THUMBNAIL BUTTON (Warm Theme) */}
+                                        <label className="relative flex items-center gap-1.5 p-1 px-2 rounded-2xl border-2 border-amber-400/80 bg-amber-950/90 hover:bg-amber-900 text-amber-100 text-xs font-bold cursor-pointer transition shadow-xl active:scale-95 group/album">
+                                            {/* Hidden File Input for Device Gallery / Album (No capture attribute) */}
                                             <input
                                                 type="file"
                                                 accept="image/*"
                                                 multiple
                                                 onChange={handleImageUpload}
-                                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                                                title="เลือกรูปภาพจากคลังภาพ/อัลบั้ม"
+                                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"
+                                                title="กดเพื่อเลือกรูปภาพจากคลังภาพ/อัลบั้มในเครื่อง"
                                             />
 
-                                            {/* Thumbnail / Icon in Bottom-Left */}
+                                            {/* Gallery Thumbnail Preview inside the Square Button */}
                                             {attachedImages.length > 0 ? (
-                                                <div className="relative w-7 h-7 rounded-lg overflow-hidden border border-white/40 shrink-0 bg-slate-800">
+                                                <div className="w-9 h-9 rounded-xl overflow-hidden border border-amber-300/60 relative shrink-0 bg-amber-900">
                                                     <img
                                                         src={attachedImages[attachedImages.length - 1].url}
-                                                        alt="Thumbnail"
+                                                        alt="Album Thumbnail"
                                                         className="w-full h-full object-cover"
                                                     />
                                                 </div>
                                             ) : (
-                                                <div className="w-7 h-7 rounded-lg bg-amber-500/30 border border-amber-400/50 flex items-center justify-center text-amber-300 shrink-0">
-                                                    <Image className="w-4 h-4" />
+                                                <div className="w-9 h-9 rounded-xl bg-amber-500/20 border border-amber-400/50 flex items-center justify-center text-amber-300 shrink-0">
+                                                    <Image className="w-5 h-5 text-amber-300" />
                                                 </div>
                                             )}
 
-                                            <div className="flex flex-col text-left leading-none">
+                                            <div className="flex flex-col text-left leading-none pr-1">
                                                 <span className="text-[11px] font-bold text-amber-200">อัลบั้ม</span>
-                                                <span className="text-[10px] text-slate-300 font-normal">เลือกจากคลังภาพ</span>
+                                                <span className="text-[9px] text-amber-300/80 font-normal">เลือกคลังภาพ</span>
                                             </div>
                                         </label>
-                                    </div>
-
-                                    {/* BOTTOM-RIGHT CORNER INFO BADGE */}
-                                    <div className="absolute bottom-3 right-3 z-0 text-[10px] text-slate-400 bg-slate-950/50 px-2 py-1 rounded-lg border border-slate-700/50">
-                                        {attachedImages.length} รูป
                                     </div>
                                 </div>
 
@@ -759,28 +795,31 @@ export default function ReportForm() {
                                 ระบบบันทึกข้อมูลคำร้องเข้าสู่ระบบเรียบร้อยแล้ว เมื่อระบบประมวลผลเสร็จสิ้น ท่านจะได้รับใบรวบรวมสรุปข้อมูลผ่านทางแชต LINE นี้ และเจ้าหน้าที่จะแจ้งความคืบหน้าการดำเนินงานให้ทราบเป็นระยะ
                             </p>
 
-                            {/* JSON Output */}
-                            {successModal.payload && (
-                                <div className="rounded-xl overflow-hidden border border-slate-200">
-                                    <div className="flex items-center justify-between px-3 py-2 bg-slate-100">
-                                        <span className="text-[11px] font-bold text-slate-600">JSON Payload Output:</span>
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                navigator.clipboard?.writeText(
-                                                    JSON.stringify(successModal.payload, null, 2)
-                                                ).then(() => alert("✅ คัดลอก JSON เรียบร้อย!"));
-                                            }}
-                                            className="text-[10px] font-bold bg-[#7A3E1D] text-white px-2 py-1 rounded-lg hover:bg-[#5C2E10] active:scale-95 transition"
-                                        >
-                                            ก๊อปปี้ JSON
-                                        </button>
-                                    </div>
-                                    <pre className="bg-slate-900 text-emerald-400 text-[10px] font-mono p-3 overflow-x-auto max-h-52 overflow-y-auto leading-relaxed">
-                                        {JSON.stringify(successModal.payload, null, 2)}
-                                    </pre>
+                            {/* Clean Summary Card (bkk-careplan style - No raw JSON exposed) */}
+                            <div className="rounded-2xl bg-amber-50/70 border border-amber-900/15 p-3.5 space-y-2 text-left text-xs">
+                                <div className="flex justify-between items-center pb-2 border-b border-amber-900/10">
+                                    <span className="font-bold text-slate-700">หน่วยงานรับผิดชอบ:</span>
+                                    <span className="font-bold text-[#7A3E1D] text-right truncate max-w-[180px]">
+                                        {selectedAgencyObj?.name || "หน่วยงานรับผิดชอบ"}
+                                    </span>
                                 </div>
-                            )}
+                                <div className="flex justify-between items-center pb-2 border-b border-amber-900/10">
+                                    <span className="font-bold text-slate-700">พิกัดสถานที่:</span>
+                                    <span className="font-mono text-slate-600">
+                                        {getValues("latitude")?.toFixed(4)}, {getValues("longitude")?.toFixed(4)}
+                                    </span>
+                                </div>
+                                <div className="flex justify-between items-center pb-2 border-b border-amber-900/10">
+                                    <span className="font-bold text-slate-700">จำนวนรูปถ่ายแนบ:</span>
+                                    <span className="font-semibold text-slate-800">{attachedImages.length} รูป</span>
+                                </div>
+                                <div className="flex justify-between items-center pt-0.5">
+                                    <span className="font-bold text-slate-700">สถานะการส่งเรื่อง:</span>
+                                    <span className="inline-flex items-center gap-1 font-bold text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded-md text-[11px] border border-emerald-300/60">
+                                        <span>✓</span> บันทึกข้อมูลเข้าสู่ระบบแล้ว
+                                    </span>
+                                </div>
+                            </div>
                         </div>
 
                         {/* Modal Footer */}
