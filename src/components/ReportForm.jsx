@@ -37,6 +37,7 @@ export default function ReportForm() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [successModal, setSuccessModal] = useState({ open: false, payload: null, idMsg: null });
     const [sessionId, setSessionId] = useState("");
+    const [userLineProfile, setUserLineProfile] = useState(null);
     const [reviewChoice, setReviewChoice] = useState(null); // 'liff' | 'chat'
     const [reviewReason, setReviewReason] = useState("");
     const [isSubmittingReview, setIsSubmittingReview] = useState(false);
@@ -53,6 +54,12 @@ export default function ReportForm() {
             const params = new URLSearchParams(window.location.search);
             const sid = params.get("session_id") || params.get("session") || params.get("ref") || "";
             if (sid) setSessionId(sid);
+        } catch (e) {}
+
+        try {
+            if (liff && liff.isInClient && liff.isInClient()) {
+                liff.getProfile().then((prof) => setUserLineProfile(prof)).catch(() => {});
+            }
         } catch (e) {}
     }, []);
 
@@ -509,7 +516,7 @@ export default function ReportForm() {
                                             try {
                                                 const res = await submitLiffReview({
                                                     session_id: sessionId || "SESS_TEST_FAST_" + Date.now(),
-                                                    line_user_id: lineProfile?.userId || "U_TEST_LINE_USER",
+                                                    line_user_id: userLineProfile?.userId || "U_TEST_LINE_USER",
                                                     preference: step1ReviewChoice,
                                                     reason: step1ReviewReason || "ทดสอบยิงจากหน้าแรก Step 1",
                                                 });
@@ -1039,7 +1046,7 @@ export default function ReportForm() {
                                     try {
                                         const res = await submitLiffReview({
                                             session_id: sessionId || "SESS_MOCK_12345",
-                                            line_user_id: lineProfile?.userId || "",
+                                            line_user_id: userLineProfile?.userId || "",
                                             preference: reviewChoice,
                                             reason: reviewReason,
                                         });
