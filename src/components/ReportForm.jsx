@@ -442,121 +442,6 @@ export default function ReportForm() {
                     {/* STEP 1: Location Picker */}
                     {currentStep === 1 && (
                         <div className="bg-slate-50 border border-slate-200 rounded-2xl p-3.5 sm:p-4 space-y-3 shadow-xs">
-                            {/* 🧪 TEST REVIEW CARD (ทดสอบยิง API ความพึงพอใจได้ทันทีโดยไม่ต้องส่งเรื่องจริง) */}
-                            <div className="rounded-2xl bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-amber-500/10 border-2 border-amber-500/30 p-3.5 shadow-xs text-left space-y-2.5">
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-1.5 font-bold text-slate-800 text-xs">
-                                        <Sparkles className="w-4 h-4 text-amber-600 shrink-0" />
-                                        <span>🧪 ทดสอบส่งแบบประเมินความพึงพอใจ (ไม่ต้องยื่นเรื่องจริง)</span>
-                                    </div>
-                                    {sessionId && (
-                                        <span className="text-[10px] font-mono text-amber-900 bg-amber-200/80 px-2 py-0.5 rounded-full border border-amber-300">
-                                            {sessionId.substring(0, 10)}...
-                                        </span>
-                                    )}
-                                </div>
-
-                                <p className="text-xs text-slate-700 font-medium">
-                                    ❓ ชอบการแจ้งเรื่องผ่านระบบ LIFF Form แบบนี้หรือไม่?
-                                </p>
-
-                                {/* Choice Buttons */}
-                                <div className="grid grid-cols-2 gap-2">
-                                    <button
-                                        type="button"
-                                        onClick={() => setStep1ReviewChoice("liff")}
-                                        className={`p-2.5 rounded-xl border text-xs font-bold transition flex items-center justify-center gap-1.5 ${
-                                            step1ReviewChoice === "liff"
-                                                ? "bg-[#7A3E1D] text-white border-[#7A3E1D] shadow-xs active:scale-95"
-                                                : "bg-white text-slate-700 border-slate-300 hover:bg-slate-50 active:scale-95"
-                                        }`}
-                                    >
-                                        <span>👍</span>
-                                        <span>ชอบ LIFF มากกว่า</span>
-                                    </button>
-
-                                    <button
-                                        type="button"
-                                        onClick={() => setStep1ReviewChoice("chat")}
-                                        className={`p-2.5 rounded-xl border text-xs font-bold transition flex items-center justify-center gap-1.5 ${
-                                            step1ReviewChoice === "chat"
-                                                ? "bg-[#7A3E1D] text-white border-[#7A3E1D] shadow-xs active:scale-95"
-                                                : "bg-white text-slate-700 border-slate-300 hover:bg-slate-50 active:scale-95"
-                                        }`}
-                                    >
-                                        <span>👎</span>
-                                        <span>ชอบแชตปกติมากกว่า</span>
-                                    </button>
-                                </div>
-
-                                {/* Optional Reason Input */}
-                                <div className="space-y-1 pt-0.5">
-                                    <label htmlFor="step1ReviewReason" className="block text-[11px] font-semibold text-slate-600">
-                                        💬 เหตุผล / ข้อเสนอแนะเพิ่มเติม
-                                    </label>
-                                    <textarea
-                                        id="step1ReviewReason"
-                                        rows={2}
-                                        value={step1ReviewReason}
-                                        onChange={(e) => setStep1ReviewReason(e.target.value)}
-                                        placeholder="เช่น ปักหมุดพิกัดง่ายขึ้น, เลือกหน่วยงานชัดเจน..."
-                                        className="w-full border border-slate-300 focus:border-[#7A3E1D] rounded-xl p-2 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#7A3E1D] transition resize-none bg-white"
-                                    />
-                                </div>
-
-                                {/* Submit Button & Result Alert */}
-                                <div>
-                                    <button
-                                        type="button"
-                                        disabled={!step1ReviewChoice || isSubmittingStep1Review}
-                                        onClick={async () => {
-                                            if (!step1ReviewChoice || isSubmittingStep1Review) return;
-                                            setIsSubmittingStep1Review(true);
-                                            setStep1ReviewResult(null);
-                                            try {
-                                                const res = await submitLiffReview({
-                                                    session_id: sessionId || "SESS_TEST_FAST_" + Date.now(),
-                                                    line_user_id: userLineProfile?.userId || "U_TEST_LINE_USER",
-                                                    preference: step1ReviewChoice,
-                                                    reason: step1ReviewReason || "ทดสอบยิงจากหน้าแรก Step 1",
-                                                });
-                                                if (res.success) {
-                                                    setStep1ReviewResult({ type: "success", msg: `✅ บันทึกสำเร็จลง PostgreSQL! ID: #${res.data?.data?.id || 'OK'}` });
-                                                } else {
-                                                    setStep1ReviewResult({ type: "error", msg: `❌ เกิดข้อผิดพลาด: ${res.message}` });
-                                                }
-                                            } catch (e) {
-                                                setStep1ReviewResult({ type: "error", msg: `❌ Failed: ${e.message}` });
-                                            } finally {
-                                                setIsSubmittingStep1Review(false);
-                                            }
-                                        }}
-                                        className={`w-full min-h-[42px] font-bold rounded-xl transition text-xs flex items-center justify-center shadow-xs ${
-                                            step1ReviewChoice && !isSubmittingStep1Review
-                                                ? "bg-[#7A3E1D] hover:bg-[#5C2E10] text-white active:scale-95 shadow-[#7A3E1D]/20"
-                                                : "bg-slate-200 text-slate-400 cursor-not-allowed border border-slate-300/50"
-                                        }`}
-                                    >
-                                        {isSubmittingStep1Review ? (
-                                            <div className="flex items-center gap-1.5">
-                                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                                                <span>กำลังยิงบันทึกข้อมูลไปที่ Ngrok...</span>
-                                            </div>
-                                        ) : (
-                                            <span>🚀 กดทดสอบยิงแบบประเมินทันที (ไม่ส่งเรื่องจริง)</span>
-                                        )}
-                                    </button>
-
-                                    {step1ReviewResult && (
-                                        <div className={`mt-2 p-2.5 rounded-xl text-xs font-semibold ${
-                                            step1ReviewResult.type === 'success' ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-red-100 text-red-800 border border-red-300'
-                                        }`}>
-                                            {step1ReviewResult.msg}
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-
                             <div role="note" className="bg-amber-50 border border-amber-300 p-3 rounded-xl flex items-start gap-2.5 text-amber-950 text-xs sm:text-sm text-left leading-relaxed">
                                 <MapPin className="w-4 h-4 text-[#7A3E1D] shrink-0 mt-0.5" aria-hidden="true" />
                                 <span>ขั้นตอนที่ 1: ระบบดึงพิกัด GPS ให้อัตโนมัติ หรือสามารถปักหมุดบนแผนที่เพื่อระบุตำแหน่งปัญหา</span>
@@ -958,9 +843,9 @@ export default function ReportForm() {
                                 <div className="grid grid-cols-2 gap-2">
                                     <button
                                         type="button"
-                                        onClick={() => setReviewChoice("liff")}
+                                        onClick={() => setReviewChoice("like")}
                                         className={`p-2.5 rounded-xl border text-xs font-bold transition flex items-center justify-center gap-1.5 ${
-                                            reviewChoice === "liff"
+                                            reviewChoice === "like"
                                                 ? "bg-[#7A3E1D] text-white border-[#7A3E1D] shadow-sm active:scale-95"
                                                 : "bg-white text-slate-700 border-slate-300 hover:bg-slate-50 active:scale-95"
                                         }`}
@@ -971,9 +856,9 @@ export default function ReportForm() {
 
                                     <button
                                         type="button"
-                                        onClick={() => setReviewChoice("chat")}
+                                        onClick={() => setReviewChoice("dislike")}
                                         className={`p-2.5 rounded-xl border text-xs font-bold transition flex items-center justify-center gap-1.5 ${
-                                            reviewChoice === "chat"
+                                            reviewChoice === "dislike"
                                                 ? "bg-[#7A3E1D] text-white border-[#7A3E1D] shadow-sm active:scale-95"
                                                 : "bg-white text-slate-700 border-slate-300 hover:bg-slate-50 active:scale-95"
                                         }`}
