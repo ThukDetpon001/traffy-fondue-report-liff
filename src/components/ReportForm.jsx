@@ -40,6 +40,7 @@ export default function ReportForm() {
     const [reviewChoice, setReviewChoice] = useState(null); // 'liff' | 'chat'
     const [reviewReason, setReviewReason] = useState("");
     const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+    const [reviewStatusResult, setReviewStatusResult] = useState(null);
 
     // Test Review card state for Step 1
     const [step1ReviewChoice, setStep1ReviewChoice] = useState(null);
@@ -989,6 +990,17 @@ export default function ReportForm() {
                                         className="w-full border border-slate-300 focus:border-[#7A3E1D] rounded-xl p-2 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#7A3E1D] transition resize-none bg-white"
                                     />
                                 </div>
+
+                                {/* Review Status Result Alert */}
+                                {reviewStatusResult && (
+                                    <div className={`p-2.5 rounded-xl text-xs font-semibold ${
+                                        reviewStatusResult.type === 'success'
+                                            ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                                            : 'bg-red-100 text-red-800 border border-red-300'
+                                    }`}>
+                                        {reviewStatusResult.msg}
+                                    </div>
+                                )}
                             </div>
                         </div>
 
@@ -1001,7 +1013,8 @@ export default function ReportForm() {
                                     setSuccessModal({ open: false, payload: null, idMsg: null });
                                     setReviewChoice(null);
                                     setReviewReason("");
-                                    if (liff.isInClient && liff.isInClient()) {
+                                    setReviewStatusResult(null);
+                                    if (liff && liff.isInClient && liff.isInClient()) {
                                         liff.closeWindow();
                                     } else {
                                         reset();
@@ -1021,27 +1034,40 @@ export default function ReportForm() {
                                 onClick={async () => {
                                     if (!reviewChoice || isSubmittingReview) return;
                                     setIsSubmittingReview(true);
+                                    setReviewStatusResult(null);
+
                                     try {
-                                        await submitLiffReview({
+                                        const res = await submitLiffReview({
                                             session_id: sessionId || "SESS_MOCK_12345",
                                             line_user_id: lineProfile?.userId || "",
                                             preference: reviewChoice,
                                             reason: reviewReason,
                                         });
-                                    } catch (e) {
-                                        console.error("Review submit error:", e);
-                                    } finally {
-                                        setIsSubmittingReview(false);
-                                        setSuccessModal({ open: false, payload: null, idMsg: null });
-                                        setReviewChoice(null);
-                                        setReviewReason("");
-                                        if (liff.isInClient && liff.isInClient()) {
-                                            liff.closeWindow();
+
+                                        if (res && res.success) {
+                                            setReviewStatusResult({ type: "success", msg: "✅ บันทึกแบบประเมินเรียบร้อยแล้ว!" });
+                                            // รอ 1.5 วินาทีเพื่อให้เห็นข้อความสำเร็จก่อนปิด LIFF
+                                            setTimeout(() => {
+                                                setIsSubmittingReview(false);
+                                                setSuccessModal({ open: false, payload: null, idMsg: null });
+                                                setReviewChoice(null);
+                                                setReviewReason("");
+                                                setReviewStatusResult(null);
+                                                if (liff && liff.isInClient && liff.isInClient()) {
+                                                    liff.closeWindow();
+                                                } else {
+                                                    reset();
+                                                    setAttachedImages([]);
+                                                    setCurrentStep(1);
+                                                }
+                                            }, 1500);
                                         } else {
-                                            reset();
-                                            setAttachedImages([]);
-                                            setCurrentStep(1);
+                                            setIsSubmittingReview(false);
+                                            setReviewStatusResult({ type: "error", msg: `❌ เกิดข้อผิดพลาด: ${res?.message || 'ไม่สามารถส่งแบบประเมินได้'}` });
                                         }
+                                    } catch (e) {
+                                        setIsSubmittingReview(false);
+                                        setReviewStatusResult({ type: "error", msg: `❌ เกิดข้อผิดพลาด: ${e.message}` });
                                     }
                                 }}
                                 className={`w-full min-h-[46px] font-bold rounded-xl transition text-xs flex items-center justify-center shadow-md ${
