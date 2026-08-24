@@ -6,7 +6,7 @@ import { LocationPicker } from "./LocationPicker";
 import { AgencySelect } from "./AgencySelect";
 import liff from "@line/liff";
 import traffyLogo from "../assets/traffy.png";
-import { submitTraffyTicket } from "@/services/api";
+import { submitTraffyTicket, submitLiffReview } from "@/services/api";
 import { compressImage } from "@/utils/imageCompressor";
 import {
     MapPin,
@@ -36,6 +36,18 @@ export default function ReportForm() {
     const [draftRestored, setDraftRestored] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [successModal, setSuccessModal] = useState({ open: false, payload: null, idMsg: null });
+    const [sessionId, setSessionId] = useState("");
+    const [reviewChoice, setReviewChoice] = useState(null); // 'liff' | 'chat'
+    const [reviewReason, setReviewReason] = useState("");
+    const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+
+    useEffect(() => {
+        try {
+            const params = new URLSearchParams(window.location.search);
+            const sid = params.get("session_id") || params.get("session") || params.get("ref") || "";
+            if (sid) setSessionId(sid);
+        } catch (e) {}
+    }, []);
 
     useEffect(() => {
         const root = document.documentElement;
@@ -801,14 +813,73 @@ export default function ReportForm() {
                                     </span>
                                 </div>
                             </div>
+
+                            {/* Review & Feedback Section (แบบประเมินความพึงพอใจ) */}
+                            <div className="rounded-2xl bg-amber-50/50 border border-amber-900/15 p-3.5 space-y-3 text-left">
+                                <div className="flex items-center gap-1.5 font-bold text-slate-800 text-xs">
+                                    <Sparkles className="w-4 h-4 text-amber-600 shrink-0" />
+                                    <span>แบบประเมินความพึงพอใจการใช้งาน</span>
+                                </div>
+
+                                <p className="text-xs text-slate-700 font-medium">
+                                    ❓ ชอบการแจ้งเรื่องผ่านระบบ LIFF Form แบบนี้หรือไม่?
+                                </p>
+
+                                {/* Choice Buttons */}
+                                <div className="grid grid-cols-2 gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => setReviewChoice("liff")}
+                                        className={`p-2.5 rounded-xl border text-xs font-bold transition flex items-center justify-center gap-1.5 ${
+                                            reviewChoice === "liff"
+                                                ? "bg-[#7A3E1D] text-white border-[#7A3E1D] shadow-sm active:scale-95"
+                                                : "bg-white text-slate-700 border-slate-300 hover:bg-slate-50 active:scale-95"
+                                        }`}
+                                    >
+                                        <span>👍</span>
+                                        <span>ชอบ LIFF มากกว่า</span>
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        onClick={() => setReviewChoice("chat")}
+                                        className={`p-2.5 rounded-xl border text-xs font-bold transition flex items-center justify-center gap-1.5 ${
+                                            reviewChoice === "chat"
+                                                ? "bg-[#7A3E1D] text-white border-[#7A3E1D] shadow-sm active:scale-95"
+                                                : "bg-white text-slate-700 border-slate-300 hover:bg-slate-50 active:scale-95"
+                                        }`}
+                                    >
+                                        <span>👎</span>
+                                        <span>ชอบแชตปกติมากกว่า</span>
+                                    </button>
+                                </div>
+
+                                {/* Optional Comment Input */}
+                                <div className="space-y-1 pt-1">
+                                    <label htmlFor="reviewReason" className="block text-[11px] font-semibold text-slate-600">
+                                        💬 เพราะอะไร / ข้อเสนอแนะเพิ่มเติม (ถ้ามี)
+                                    </label>
+                                    <textarea
+                                        id="reviewReason"
+                                        rows={2}
+                                        value={reviewReason}
+                                        onChange={(e) => setReviewReason(e.target.value)}
+                                        placeholder="เช่น ปักหมุดพิกัดง่ายขึ้น, เลือกหน่วยงานชัดเจน..."
+                                        className="w-full border border-slate-300 focus:border-[#7A3E1D] rounded-xl p-2 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#7A3E1D] transition resize-none bg-white"
+                                    />
+                                </div>
+                            </div>
                         </div>
 
-                        {/* Modal Footer */}
-                        <div className="px-4 pb-5 pt-1">
+                        {/* Modal Footer: 2 Action Buttons */}
+                        <div className="px-4 pb-5 pt-1 grid grid-cols-2 gap-2.5">
+                            {/* Button 1: เสร็จสิ้น / ปิดหน้าต่าง */}
                             <button
                                 type="button"
                                 onClick={() => {
                                     setSuccessModal({ open: false, payload: null, idMsg: null });
+                                    setReviewChoice(null);
+                                    setReviewReason("");
                                     if (liff.isInClient && liff.isInClient()) {
                                         liff.closeWindow();
                                     } else {
@@ -817,9 +888,55 @@ export default function ReportForm() {
                                         setCurrentStep(1);
                                     }
                                 }}
-                                className="w-full min-h-[48px] bg-[#7A3E1D] hover:bg-[#5C2E10] text-white font-bold rounded-xl active:scale-95 transition text-sm flex items-center justify-center shadow-md shadow-[#7A3E1D]/20"
+                                className="w-full min-h-[46px] bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl active:scale-95 transition text-xs flex items-center justify-center border border-slate-300/80"
                             >
                                 เสร็จสิ้น / ปิดหน้าต่าง
+                            </button>
+
+                            {/* Button 2: ส่งแบบประเมิน & ปิดหน้าต่าง */}
+                            <button
+                                type="button"
+                                disabled={!reviewChoice || isSubmittingReview}
+                                onClick={async () => {
+                                    if (!reviewChoice || isSubmittingReview) return;
+                                    setIsSubmittingReview(true);
+                                    try {
+                                        await submitLiffReview({
+                                            session_id: sessionId || "SESS_MOCK_12345",
+                                            line_user_id: lineProfile?.userId || "",
+                                            preference: reviewChoice,
+                                            reason: reviewReason,
+                                        });
+                                    } catch (e) {
+                                        console.error("Review submit error:", e);
+                                    } finally {
+                                        setIsSubmittingReview(false);
+                                        setSuccessModal({ open: false, payload: null, idMsg: null });
+                                        setReviewChoice(null);
+                                        setReviewReason("");
+                                        if (liff.isInClient && liff.isInClient()) {
+                                            liff.closeWindow();
+                                        } else {
+                                            reset();
+                                            setAttachedImages([]);
+                                            setCurrentStep(1);
+                                        }
+                                    }
+                                }}
+                                className={`w-full min-h-[46px] font-bold rounded-xl transition text-xs flex items-center justify-center shadow-md ${
+                                    reviewChoice && !isSubmittingReview
+                                        ? "bg-[#7A3E1D] hover:bg-[#5C2E10] text-white active:scale-95 shadow-[#7A3E1D]/20"
+                                        : "bg-slate-200 text-slate-400 cursor-not-allowed border border-slate-300/50"
+                                }`}
+                            >
+                                {isSubmittingReview ? (
+                                    <div className="flex items-center gap-1.5">
+                                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                        <span>กำลังส่ง...</span>
+                                    </div>
+                                ) : (
+                                    <span>ส่งแบบประเมิน 🚀</span>
+                                )}
                             </button>
                         </div>
                     </div>

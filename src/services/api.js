@@ -387,3 +387,39 @@ export async function fetchLatestReportedAgency(lineUserId) {
         return null;
     }
 }
+
+/**
+ * 6. Submit LIFF Satisfaction Review (Mockup API)
+ * บันทึกผลประเมินความพึงพอใจและ session_id หลังยื่นเรื่องสำเร็จ
+ * @param {Object} reviewData - { session_id, line_user_id, preference: 'liff'|'chat', reason: string }
+ * @returns {Promise<{success: boolean, message: string, payload: Object}>}
+ */
+export async function submitLiffReview(reviewData) {
+    const { session_id, line_user_id, preference, reason } = reviewData;
+
+    try {
+        const payload = {
+            session_id: session_id || "",
+            line_user_id: line_user_id || "",
+            source: "yellow_card",
+            preference: preference,
+            reason: (reason || "").trim(),
+        };
+
+        // เปลี่ยน localhost เป็น Domain หรือ IP ของ Go Server เมื่อนำไปขึ้น Server จริง
+        const response = await fetch("http://localhost:3000/api/reviews", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(payload),
+        });
+
+        if (!response.ok) throw new Error(`HTTP Error ${response.status}`);
+        const data = await response.json();
+        return { success: true, data };
+    } catch (error) {
+        console.error("❌ Failed to submit review:", error);
+        return { success: false, message: error.message };
+    }
+}
