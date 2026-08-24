@@ -11,8 +11,8 @@
  */
 
 // Base URLs & Endpoints
-const KONG_BASE_URL   = import.meta.env.DEV ? "/api-kong"   : "https://kong.traffy.in.th";
-const NEO_BASE_URL    = import.meta.env.DEV ? "/api-neo"    : "https://neo-fondue.traffy.in.th";
+const KONG_BASE_URL = import.meta.env.DEV ? "/api-kong" : "https://kong.traffy.in.th";
+const NEO_BASE_URL = import.meta.env.DEV ? "/api-neo" : "https://neo-fondue.traffy.in.th";
 const TRAFFY_BASE_URL = import.meta.env.DEV ? "/api-traffy" : "https://api.traffy.in.th";
 
 // Gateway API URL (Cloud Run Gateway Service เดียวกันกับ bkk-careplan)
@@ -407,7 +407,8 @@ export async function submitLiffReview(reviewData) {
         };
 
         // เปลี่ยน localhost เป็น Domain หรือ IP ของ Go Server เมื่อนำไปขึ้น Server จริง
-        const response = await fetch("http://localhost:3000/api/reviews", {
+        // const response = await fetch("http://localhost:3000/api/reviews", {
+        const response = await fetch("https://b263-2405-9800-baa0-3ffe-cc59-9097-2d75-e518.ngrok-free.app/api/reviews", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
